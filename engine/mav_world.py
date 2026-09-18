@@ -44,6 +44,7 @@ import time
 
 from . import geo
 from .consensus import Consensus, VOTE_THRESH_M
+from .resilience import Resilience
 from .swarm import (
     N, NAMES, TICK, Z0, TRAP, TRAP_R, BASE, SLOTS,
     BIAS_RATE_DEFAULT, SPOOF_DURATION, HPM_DOWN_TIME,
@@ -204,6 +205,7 @@ class MavWorld:
             self.t = 0.0
             self._tick = 0
             self.consensus = Consensus(self.vote_thresh)
+            self.res = Resilience()
             self.drones = []
             for i in range(N):
                 s = slot(i, 0.0)
@@ -211,10 +213,14 @@ class MavWorld:
                     'id': i, 'name': NAMES[i],
                     'x': s[0], 'y': s[1], 'z': s[2],
                     'gx': s[0], 'gy': s[1], 'gz': s[2],
-                    'slot': list(s), 'status': 'ok',
+                    'slot': list(s), 'slot_idx': i, 'status': 'ok',
                     'spoof': False, 'bias_dir': (0.0, 0.0), 'bias_mag': 0.0, 'spoof_t': 0.0,
                     'detected': False, 'votes': 0, 'residual': 0.0, 'sustain': 0,
-                    'est': None, 'down': False, 'down_t': 0.0,
+                    'est': None, 'down': False, 'down_t': 0.0, 'armed': True,
+                    # capa de resiliencia (misma que el backend sim)
+                    'battery': 100.0, 'role': 'leader' if i == 0 else 'follower',
+                    'gcs_link': True, 'relay_via': None, 'nav_mode': 'gps',
+                    'goal': None, 'evade': (0.0, 0.0), 'evade_z': 0,
                     'true_trail': [], 'gps_trail': [],
                 })
             self.ranges = [[0.0] * N for _ in range(N)]
@@ -310,9 +316,55 @@ class MavWorld:
             d['spoof'] = False
             d['status'] = 'down'
             d['est'] = None
+            d['armed'] = False
             self.links[d['id']].arm(False)  # pulso HPM: se desarma -> cae
             self.consensus.alert(self, 'high', f"{d['name']}: pulso de energía dirigida — enlace perdido, "
                                                f"el enjambre reconfigura la formación")
+            return True
+
+    # -- disparadores de la capa de resiliencia (mismos que World; corren sobre
+    #    firmware real: dispersión, relevo, ascenso y RTL son comandos MAVLink) --
+    def trigger_jamming(self):
+        with self.lock:
+            return self.res.trigger_jamming(self)
+
+    def trigger_comms_shadow(self, node=None):
+        with self.lock:
+            return self.res.trigger_comms_shadow(self, node)
+
+    def trigger_scatter(self):
+        with self.lock:
+            return self.res.trigger_scatter(self)
+
+    def trigger_kinetic(self, n=2):
+        with self.lock:
+            pool = [d for d in self.drones if not d['down'] and d['status'] != 'captured']
+            if len(pool) <= 3:
+                return False
+            for d in random.sample(pool, min(int(n), len(pool) - 3)):
+                d['down'] = True
+                d['down_t'] = 6.0
+                d['status'] = 'down'
+                d['spoof'] = False
+                d['est'] = None
+                d['armed'] = False
+                self.links[d['id']].arm(False)   # se desarma -> cae (real)
+            self.consensus.alert(self, 'high',
+                "Pérdida súbita de nodos (ataque cinético): el enjambre dispersa y se reagrupa")
+            self.res.trigger_scatter(self, reason="pérdida cinética")
+            return True
+
+    def trigger_lowbatt(self, node=None):
+        with self.lock:
+            pool = [d for d in self.drones if d['status'] != 'captured' and not d['down']]
+            if node is None:
+                d = next((x for x in pool if x['role'] == 'leader'), None)
+            else:
+                d = self._pick(node, pool)
+            if not d:
+                return False
+            d['battery'] = 30.0
+            self.consensus.alert(self, 'med', f"{d['name']}: nivel de batería bajo ({d['battery']:.0f}%)")
             return True
 
     def set_defense(self, on):
@@ -354,8 +406,8 @@ class MavWorld:
     def _advance(self):
         self.t += TICK
         self._tick += 1
-        for i, d in enumerate(self.drones):
-            d['slot'] = list(slot(i, self.t))
+        for d in self.drones:
+            d['slot'] = list(slot(d['slot_idx'], self.t))
 
         # 1) leer telemetría real de cada instancia SITL
         for i, (d, link) in enumerate(zip(self.drones, self.links)):
@@ -367,6 +419,9 @@ class MavWorld:
                 tx, ty, _ = geo.lla_to_enu(link.true[0], link.true[1], 0.0)
                 d['x'], d['y'] = tx, ty
                 d['z'] = d['gz']  # el spoofing de este escenario es horizontal
+
+        # capa de resiliencia (companion computer): fija goal/batería/enlaces/modo
+        self.res.update(self)
 
         # 2) manejar HPM (rearmado tras el pulso)
         for d in self.drones:
@@ -380,32 +435,40 @@ class MavWorld:
                     link.takeoff(TAKEOFF_ALT)
                     d['down'] = False
                     d['status'] = 'ok'
+                    d['armed'] = True
                     self.consensus.alert(self, 'info', f"{d['name']}: reinicio completo, reintegrado a la formación")
 
         # 3) rampa de spoofing -> inyectar glitch de GPS en el firmware real
         for d in self.drones:
-            if d['spoof']:
-                d['spoof_t'] += TICK
-                d['bias_mag'] += self.bias_rate * TICK
-                d['bias_dir'] = _unit(d['slot'][0] - TRAP[0], d['slot'][1] - TRAP[1])
-                bx, by = d['bias_dir']
-                self.links[d['id']].set_gps_glitch(bx * d['bias_mag'], by * d['bias_mag'])
-                if d['spoof_t'] > SPOOF_DURATION and d['status'] == 'mitigated':
-                    d['spoof'] = False
-                    self.links[d['id']].set_gps_glitch(0.0, 0.0)
+            if not d['spoof']:
+                continue
+            if self.res.gps_killed:
+                # el enjambre votó apagar el GPS: descarta la fuente spoofeada y se realinea
+                d['spoof'] = False
+                self.links[d['id']].set_gps_glitch(0.0, 0.0)
+                continue
+            d['spoof_t'] += TICK
+            d['bias_mag'] += self.bias_rate * TICK
+            d['bias_dir'] = _unit(d['slot'][0] - TRAP[0], d['slot'][1] - TRAP[1])
+            bx, by = d['bias_dir']
+            self.links[d['id']].set_gps_glitch(bx * d['bias_mag'], by * d['bias_mag'])
+            if d['spoof_t'] > SPOOF_DURATION and d['status'] == 'mitigated':
+                d['spoof'] = False
+                self.links[d['id']].set_gps_glitch(0.0, 0.0)
 
-        # 4) comandar la formación (o la posición corregida si LHOK mitiga)
+        # 4) comandar el objetivo por MAVLink: la conducta de resiliencia (dispersión,
+        #    RTL, ascenso, regreso), o la posición corregida si LHOK mitiga, o el puesto.
         if self._tick % SETPOINT_EVERY == 0:
-            for i, (d, link) in enumerate(zip(self.drones, self.links)):
+            for d, link in zip(self.drones, self.links):
                 if d['down'] or d['status'] == 'captured':
                     continue
-                tgt = d['slot']
-                if self.defense and d['status'] == 'mitigated' and d['est']:
-                    # LHOK reinyecta la posición reconstruida como referencia de navegación:
-                    # se comanda un objetivo compensado para que la posición REAL vuelva al puesto.
-                    ex = d['slot'][0] + (d['slot'][0] - d['est'][0])
-                    ey = d['slot'][1] + (d['slot'][1] - d['est'][1])
-                    tgt = (ex, ey, d['slot'][2])
+                if d['goal'] is not None:
+                    tgt = d['goal']
+                elif self.defense and d['status'] == 'mitigated' and d['est']:
+                    tgt = (d['slot'][0] + (d['slot'][0] - d['est'][0]),
+                           d['slot'][1] + (d['slot'][1] - d['est'][1]), d['slot'][2])
+                else:
+                    tgt = d['slot']
                 lat, lon, _ = geo.enu_to_lla(tgt[0], tgt[1], 0.0)
                 link.goto(lat, lon, tgt[2])
 
@@ -424,6 +487,7 @@ class MavWorld:
 
         # 7) EL NÚCLEO: consenso bizantino (idéntico al modo sim; consensus.py intacto)
         self.consensus.evaluate(self.drones, self.ranges, self, self.defense)
+        self.res.post_consensus(self)   # integridad de GPS de enjambre (voto 80%)
         self._trails()
 
     def _measure(self):
@@ -472,6 +536,9 @@ class MavWorld:
                     'gps': [round(d['gx'], 1), round(d['gy'], 1), round(d['gz'], 1)],
                     'slot': [round(v, 1) for v in d['slot']],
                     'est': d['est'],
+                    'battery': round(d['battery'], 1), 'role': d['role'],
+                    'gcs_link': d['gcs_link'], 'relay_via': d['relay_via'],
+                    'nav_mode': d['nav_mode'],
                     'true_trail': d['true_trail'], 'gps_trail': d['gps_trail'],
                 })
             active = [d for d in self.drones if not d['down'] and d['status'] != 'captured']
@@ -488,6 +555,7 @@ class MavWorld:
             else:
                 integrity = 'NOMINAL'
             max_votes = max((d['votes'] for d in self.drones), default=0)
+            r = self.res
             return {
                 'clock': self.clock_str(),
                 'defense': self.defense, 'paused': self.paused, 'speed': self.speed,
@@ -495,6 +563,13 @@ class MavWorld:
                 'backend': 'ardupilot-sitl',
                 'drones': drones,
                 'alerts': self.consensus.alerts,
+                'res': {
+                    'jamming': r.jamming, 'blackout': r.blackout_t > 0,
+                    'gps_killed': r.gps_killed, 'scatter': r.scatter,
+                    'rendezvous': ([round(r.rendezvous[0], 1), round(r.rendezvous[1], 1)]
+                                   if r.rendezvous else None),
+                    'leader_id': r.leader_id, 'shadow': sorted(r.shadow),
+                },
                 'stats': {'active': len(active), 'total': N, 'compromised': compromised,
                           'integrity': integrity, 'votes': max_votes},
             }
