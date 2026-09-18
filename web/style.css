@@ -209,3 +209,17 @@ td.st-mitigated { color: var(--orange); } td.st-down { color: var(--gray); } td.
 .nowrap { white-space: nowrap; }
 .tagi { font-family: var(--mono); font-size: 9px; background: var(--blue); color: #fff; padding: 1px 4px; border-radius: 2px; margin-left: 4px; letter-spacing: .04em; }
 .tagi.off { background: var(--dark-red); }
+
+/* ---------- panel de rendimiento medido ---------- */
+.metrics { font-size: 11.5px; }
+.mtab { width: 100%; border-collapse: collapse; }
+.mtab th, .mtab td { padding: 3px 4px; }
+.mtab th.r, .mtab td.r { text-align: right; font-family: var(--mono); }
+.mtab thead th { color: var(--ink-2); font-weight: 600; border-bottom: 1px solid var(--rule); font-size: 10.5px; text-align: left; }
+.mtab tr.bad td:first-child { color: var(--dark-red); font-weight: 700; }
+.mtab tr.good td:first-child { color: var(--green); font-weight: 700; }
+.mkpi { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 9px; font-size: 11px; color: var(--ink-2); }
+.mkpi b { color: var(--ink); font-family: var(--mono); }
+.mkpi .bad b { color: var(--dark-red); }
+.metrics .muted { color: var(--ink-3); }
+.metrics code { background: var(--paper-2); padding: 1px 4px; border-radius: 2px; }

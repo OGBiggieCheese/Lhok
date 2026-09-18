@@ -1,0 +1,32 @@
+{
+  "attack": "GPS spoofing",
+  "node": "CHARLIE-1",
+  "marks_s": [
+    10,
+    30,
+    60
+  ],
+  "without": {
+    "defense": false,
+    "dev": {
+      "10": 51.1,
+      "30": 149.0,
+      "60": 163.6
+    },
+    "max_dev": 239.9,
+    "detect_s": null,
+    "captured": true
+  },
+  "with": {
+    "defense": true,
+    "dev": {
+      "10": 29.2,
+      "30": 4.8,
+      "60": 4.8
+    },
+    "max_dev": 63.4,
+    "detect_s": 7.6,
+    "captured": false
+  },
+  "false_positives": 0
+}

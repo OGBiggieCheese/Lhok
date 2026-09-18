@@ -42,8 +42,8 @@ RELAY_RANGE = 230.0       # alcance de un salto de relevo entre drones (m)
 CLIMB_FOR_LOS = 45.0      # ascenso extra para recuperar línea de vista (m)
 
 # -- energía --------------------------------------------------------------------
-BATT_DRAIN = 0.65         # consumo base (%/s)
-LEADER_EXTRA = 0.55       # el líder/portador de carga gasta más (%/s)
+BATT_DRAIN = 0.08         # consumo base (%/s) — lento: no distrae en una demo de 3 min
+LEADER_EXTRA = 0.06       # el líder/portador de carga gasta un poco más (%/s)
 BATT_HANDOFF = 35.0       # umbral para relevar el liderazgo (%)
 BATT_RTB = 18.0           # umbral para retorno solitario a base (%)
 

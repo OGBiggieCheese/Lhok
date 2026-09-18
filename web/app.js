@@ -477,6 +477,23 @@
     }
   }
 
+  // ---------- métricas medidas (benchmark con/sin Lhok) ----------
+  function renderMetrics(m) {
+    const el = $("metrics"); if (!el) return;
+    if (!m) { el.innerHTML = '<span class="muted">Corré <code>py bench.py</code> para generar las métricas.</span>'; return; }
+    const row = (label, o, cls) => `<tr class="${cls}"><td>${label}</td>` +
+      m.marks_s.map(s => `<td class="r">${o.dev[s] != null ? o.dev[s] + " m" : "—"}</td>`).join("") +
+      `<td class="r">${o.max_dev} m</td></tr>`;
+    el.innerHTML = `<table class="mtab">
+      <thead><tr><th>Desvío de ruta</th>${m.marks_s.map(s => `<th class="r">${s} s</th>`).join("")}<th class="r">máx</th></tr></thead>
+      <tbody>${row("Sin Lhok", m.without, "bad")}${row("Con Lhok", m.with, "good")}</tbody></table>
+      <div class="mkpi">
+        <span>Detección <b>${m.with.detect_s} s</b></span>
+        <span>Falsos positivos <b>${m.false_positives}</b></span>
+        <span class="${m.without.captured ? "bad" : ""}">Sin Lhok → <b>${m.without.captured ? "CAPTURADO" : "ok"}</b></span>
+      </div>`;
+  }
+
   // ---------- strip chart ----------
   function drawStrip() {
     const W = strip.clientWidth, H = strip.clientHeight;
@@ -621,6 +638,7 @@
   async function init() {
     cfg = await (await fetch("/api/config")).json();
     terrain = buildTerrain(cfg.extent);
+    fetch("/metrics.json").then(r => r.ok ? r.json() : null).then(renderMetrics).catch(() => renderMetrics(null));
     resize(); wire(); await poll();
     setInterval(poll, 150);
     requestAnimationFrame(render);
