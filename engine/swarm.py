@@ -205,7 +205,7 @@ class World:
         self.paused = bool(paused)
 
     def set_speed(self, x):
-        self.speed = x if x in (1, 2, 4) else 1
+        self.speed = x if x in (1, 2, 8) else 1
 
     # -- avance ---------------------------------------------------------------
     def step(self):

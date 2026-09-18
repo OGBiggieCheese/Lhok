@@ -63,8 +63,8 @@
         <h2>Banco de ataques</h2>
         <div class="target">Objetivo: <b id="target-name">nodo aleatorio</b> <button id="btn-clear" class="link">quitar</button></div>
         <div class="btns">
-          <button id="btn-spoof" title="Inyecta una señal GPS falsa en el nodo: cree seguir en formación mientras es arrastrado físicamente hacia la zona trampa. Lhok lo detecta por consenso y lo corrige.">Spoofing GPS</button>
-          <button id="btn-hpm" title="Pulso de energía dirigida (tipo Leonidas): apaga un dron unos segundos. El enjambre reconfigura la formación y el nodo se reintegra al reiniciarse.">Pulso HPM</button>
+          <button id="btn-spoof" title="Inyecta una señal GPS falsa en el nodo: cree seguir en formación mientras es arrastrado físicamente hacia la zona trampa. Lhok lo detecta por consenso y lo corrige.">Falsear GPS (spoofing)</button>
+          <button id="btn-hpm" title="Pulso de energía dirigida (tipo Leonidas): apaga un dron unos segundos. El enjambre reconfigura la formación y el nodo se reintegra al reiniciarse.">Apagar un dron (HPM)</button>
         </div>
         <div class="switch-row">
           <span>Defensa LHOK</span>
@@ -80,11 +80,11 @@
       <section class="block">
         <h2>Resiliencia autónoma <small>capa de enjambre (companion computer)</small></h2>
         <div class="btns wrap">
-          <button id="btn-jam" title="Inhibidor de radio enemigo: corta el enlace con la base. El enjambre asciende para recuperar línea de vista y, si no lo logra, retorna coordinado por el último vector limpio.">Jamming de enlace</button>
-          <button id="btn-shadow" title="Un dron entra en sombra de terreno y pierde el enlace DIRECTO con la base. Un compañero se vuelve puente repetidor para mantenerlo conectado.">Sombra de terreno</button>
-          <button id="btn-scatter" title="Simula un radar/amenaza que ilumina al enjambre: rompe la formación con maniobras evasivas y se reagrupa en un punto de reunión memorizado.">Dispersión táctica</button>
-          <button id="btn-kinetic" title="Pérdida súbita de varios drones (ataque cinético / escopeta antidrón): el enjambre dispersa y reagrupa a los sobrevivientes.">Ataque cinético</button>
-          <button id="btn-lowbatt" title="Fuerza batería baja en el líder: el dron con más energía asume el mando y el agotado se repliega al centro o regresa solo a la base.">Batería del líder ↓</button>
+          <button id="btn-jam" title="Inhibidor de radio enemigo: corta el enlace con la base. El enjambre asciende para recuperar línea de vista y, si no lo logra, retorna coordinado por el último vector limpio.">Cortar la radio (jamming)</button>
+          <button id="btn-shadow" title="Un dron entra en sombra de terreno y pierde el enlace DIRECTO con la base. Un compañero se vuelve puente repetidor para mantenerlo conectado.">Perder enlace por terreno</button>
+          <button id="btn-scatter" title="Simula un radar/amenaza que ilumina al enjambre: rompe la formación con maniobras evasivas y se reagrupa en un punto de reunión memorizado.">Dispersar el enjambre</button>
+          <button id="btn-kinetic" title="Pérdida súbita de varios drones (ataque cinético / escopeta antidrón): el enjambre dispersa y reagrupa a los sobrevivientes.">Derribar drones (cinético)</button>
+          <button id="btn-lowbatt" title="Fuerza batería baja en el líder: el dron con más energía asume el mando y el agotado se repliega al centro o regresa solo a la base.">Vaciar batería del líder</button>
         </div>
         <div class="scen">Escenarios guiados:
           <button class="link" data-scen="masspoof" title="Spoofean a casi todo el enjambre a la vez → la mayoría vota apagar el GPS y todos vuelan por inercia/UWB.">Spoofing masivo → apagar GPS</button>
@@ -120,7 +120,7 @@
 
       <footer class="bench-foot">
         <span class="speed">
-          <button data-x="1" class="on">×1</button><button data-x="2">×2</button><button data-x="4">×4</button>
+          <button data-x="1" class="on">×1</button><button data-x="2">×2</button><button data-x="8">×8</button>
           <button id="btn-pause" class="pause">Pausa</button>
         </span>
         <button id="btn-reset" class="quiet">Reiniciar ensayo</button>

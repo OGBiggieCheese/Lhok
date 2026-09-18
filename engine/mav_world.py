@@ -390,7 +390,7 @@ class MavWorld:
         self.paused = bool(paused)
 
     def set_speed(self, x):
-        self.speed = x if x in (1, 2, 4) else 1
+        self.speed = x if x in (1, 2, 8) else 1
 
     def clock_str(self):
         return f"T+{int(self.t) // 60:02d}:{int(self.t) % 60:02d}"
