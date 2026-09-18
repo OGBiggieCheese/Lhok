@@ -49,7 +49,7 @@ Corre el firmware de vuelo real (ArduPilot) en Docker y Lhok lo vigila:
 
 ```bash
 cd sitl && docker compose up -d      # 7 ArduCopter reales
-../run-mav.ps1                        # FALANGE en modo firmware
+../run-mav.ps1                        # Lhok en modo firmware
 ```
 
 Detalles, arquitectura y troubleshooting: **[DOCS.md](DOCS.md)**.
