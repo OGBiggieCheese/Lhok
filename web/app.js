@@ -215,6 +215,48 @@
     if (!dragging && !userRotated) el += (elGoal - el) * .08;
   }
 
+  // ---------- modo escenario de misión (mismo visor, distinto mapa) ----------
+  let curMode = "bench";
+  const M_PHASE = {
+    APROXIMACION:["Avance hacia el objetivo","Siete drones avanzan en formación hacia el búnker enemigo. Cada uno mide por radio la distancia a sus vecinos."],
+    JAMMING:["Zona de JAMMING","Se cortó el enlace de radio: el enjambre <b>asciende</b> para recuperar línea de vista y atraviesa la zona."],
+    SPOOFING_WAIT:["Enlace recuperado","El enjambre salió del jamming y continúa hacia el objetivo."],
+    SPOOFING:["Zona de SPOOFING","Le mienten el GPS a dos drones. El <b>consenso de Lhok</b> lo detecta y reconstruye su posición real."],
+    SOLDADOS_WAIT:["Spoofing neutralizado","El enjambre retoma el GPS y sigue el avance."],
+    SOLDADOS:["FUEGO ENEMIGO","Dos soldados disparan: el enjambre <b>dispersa</b> con maniobras evasivas y se reagrupa."],
+    APROX_BUNKER:["Aproximación al búnker","La vanguardia sondea el objetivo…"],
+    ASALTO:["ASALTO ADAPTADO","La vanguardia cayó por jamming. El enjambre <b>aprende</b>: 2 drones distraen y 2 caen en <b>picado inercial</b> sobre el búnker."],
+    EXITO:["MISIÓN CUMPLIDA","El búnker fue neutralizado pese al jamming."],
+  };
+  const M_CLS = { JAMMING:"attack", SPOOFING:"attack", SOLDADOS:"captured", APROX_BUNKER:"vote", ASALTO:"vote", EXITO:"mitig" };
+
+  function triMark(x,y,r,color){ ctx.fillStyle=color; ctx.beginPath(); ctx.moveTo(x,y-r); ctx.lineTo(x+r*.9,y+r*.7); ctx.lineTo(x-r*.9,y+r*.7); ctx.closePath(); ctx.fill(); }
+  function groundBand(x0,x1,color,text){
+    const e=cfg.extent||230;
+    ctx.beginPath();
+    [[x0,-e],[x1,-e],[x1,e],[x0,e]].forEach((pp,i)=>{ const q=project([pp[0],pp[1],0]); i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y); });
+    ctx.closePath(); ctx.fillStyle=color; ctx.globalAlpha=.08; ctx.fill(); ctx.globalAlpha=.35; ctx.strokeStyle=color; ctx.lineWidth=1; ctx.stroke(); ctx.globalAlpha=1;
+    const q=project([(x0+x1)/2, -e*0.62, 0]); halo(text,q.x,q.y,color,"bold 10px Georgia, serif","center");
+  }
+  function drawMissionScene(now){
+    const jam=cfg.jam1, sp=cfg.spoof, k=cfg.bunker, ob=cfg.own_base;
+    if(jam) groundBand(jam.x0,jam.x1,C.darkRed,"ZONA DE JAMMING");
+    if(sp) groundBand(sp.x0,sp.x1,C.blue,"ZONA DE SPOOFING");
+    if(k){ drawDisc(k.x,k.y,k.r,C.darkRed); const kq=project([k.x,k.y,0]); ctx.fillStyle=C.darkRed; ctx.fillRect(kq.x-8,kq.y-6,16,12); ctx.strokeStyle="#f4f3ee"; ctx.lineWidth=1.2; ctx.strokeRect(kq.x-8,kq.y-6,16,12); halo("BÚNKER ENEMIGO",kq.x,kq.y+20,C.darkRed,"bold 11px Georgia, serif","center"); }
+    if(ob){ const oq=project([ob.x,ob.y,0]); triMark(oq.x,oq.y,8,C.green); halo("BASE PROPIA",oq.x,oq.y+16,C.green,"bold 10px Georgia, serif","center"); }
+    (cfg.soldiers||[]).forEach(s=>{ const sq=project([s.x,s.y,0]); triMark(sq.x,sq.y,7,C.darkRed); });
+    if(cfg.soldiers && cfg.soldiers.length){ const s0=project([cfg.soldiers[0].x,cfg.soldiers[0].y,0]); halo("SOLDADOS",s0.x,s0.y-11,C.darkRed,"italic 10px Georgia, serif","center"); }
+    if(state && state.phase==="SOLDADOS"){ const alive=state.drones.filter(d=>!d.down); (cfg.soldiers||[]).forEach((s,i)=>{ const t=alive[i%Math.max(1,alive.length)]; if(t){ const P2=disp[t.id]?disp[t.id].t:t.true; line(project([s.x,s.y,0]),project(P2),C.darkRed,1,.3+.4*Math.random()); } }); }
+  }
+
+  async function onModeChange(m){
+    curMode=m;
+    try{ cfg=await (await fetch("/api/config")).json(); }catch(e){}
+    Object.keys(disp).forEach(kk=>delete disp[kk]);
+    hist.t.length=0; hist.res.length=0; userRotated=false;
+    resize();
+  }
+
   // ---------- escena ----------
   function render(now) {
     requestAnimationFrame(render);
@@ -229,14 +271,18 @@
     arrow(n0, n1, C.ink, 1.2); halo("N", n1.x + 6, n1.y + 4, C.ink, "bold 11px Georgia, serif");
     const s0 = project([-e + 14, -e + 14, 0]), s1 = project([-e + 14 + 100, -e + 14, 0]);
     line(s0, s1, C.ink, 1.4); halo("100 m", s1.x + 5, s1.y + 4, C.ink2, "10px Consolas, monospace");
-    const path = cfg.path.map(p => [p[0], p[1], cfg.z0]); path.push(path[0]);
-    polyline3(path, C.ink3, 1, .7, [6, 5]);
-    const pl = project([cfg.path[18][0], cfg.path[18][1], cfg.z0]);
-    halo("ruta de la misión", pl.x + 6, pl.y - 6, C.ink3, "italic 10.5px Georgia, serif");
-    drawDisc(cfg.trap.x, cfg.trap.y, cfg.trap.r, C.orange);
-    const tl = project([cfg.trap.x, cfg.trap.y, 0]);
-    halo("ZONA TRAMPA", tl.x, tl.y - 6, C.orange, "bold 11px Georgia, serif", "center");
-    halo("adonde el atacante quiere llevar al dron", tl.x, tl.y + 8, C.orange, "italic 9.5px Georgia, serif", "center");
+    if (cfg.mission) {
+      drawMissionScene(now);
+    } else {
+      const path = cfg.path.map(p => [p[0], p[1], cfg.z0]); path.push(path[0]);
+      polyline3(path, C.ink3, 1, .7, [6, 5]);
+      const pl = project([cfg.path[18][0], cfg.path[18][1], cfg.z0]);
+      halo("ruta de la misión", pl.x + 6, pl.y - 6, C.ink3, "italic 10.5px Georgia, serif");
+      drawDisc(cfg.trap.x, cfg.trap.y, cfg.trap.r, C.orange);
+      const tl = project([cfg.trap.x, cfg.trap.y, 0]);
+      halo("ZONA TRAMPA", tl.x, tl.y - 6, C.orange, "bold 11px Georgia, serif", "center");
+      halo("adonde el atacante quiere llevar al dron", tl.x, tl.y + 8, C.orange, "italic 9.5px Georgia, serif", "center");
+    }
     if (cfg.base) {
       const bq = project([cfg.base.x, cfg.base.y, 0]);
       ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5;
@@ -271,7 +317,7 @@
       halo(`${bad ? "✗" : "✓"} ${dlt.toFixed(0)} m`, mx, my + 4, bad ? C.orange : C.ink3, `${bad ? "bold " : ""}10px Consolas, monospace`, "center");
     });
     // arrastre hacia la trampa
-    if (attacked && attacked.spoof && attacked.status !== "mitigated") {
+    if (attacked && attacked.spoof && attacked.status !== "mitigated" && cfg.trap) {
       const a = project(P(attacked)), b = project([cfg.trap.x, cfg.trap.y, 0]);
       arrow(a, b, C.orange, 1, [5, 5]);
     }
@@ -353,6 +399,14 @@
   // ---------- narración ----------
   function narrate() {
     const D = state.drones, box = $("story"), R = state.res || {};
+    if (cfg.mission) {
+      const m = M_PHASE[state.phase] || ["Misión", ""];
+      box.className = "story " + (M_CLS[state.phase] || "");
+      $("story-step").textContent = state.success ? "✓ FIN" : "MISIÓN";
+      $("story-title").textContent = m[0];
+      $("story-text").innerHTML = m[1];
+      return;
+    }
     const need = Math.floor((state.stats.active - 1) * .5) + 1;
     const cap = D.find(d => d.status === "captured"), mit = D.find(d => d.status === "mitigated"),
           sp = D.find(d => d.spoof && d.status === "ok"), down = D.find(d => d.down);
@@ -556,6 +610,9 @@
     if (!state) return;
     const D = state.drones;
     $("clock").textContent = state.clock;
+    $("btn-mission").innerHTML = curMode === "mission"
+      ? '◀ Volver al banco de ensayos <small>salir del escenario de misión</small>'
+      : '🎯 Escenario de misión <small>Asalto al búnker — la historia completa</small>';
     const anyCap = D.some(d => d.status === "captured"), anyDown = D.some(d => d.down), anyAtk = D.some(d => d.spoof || d.status === "mitigated");
     const R = state.res || {};
     setLamp("lamp-swarm", anyCap ? "bad" : (anyDown || R.scatter) ? "warn" : "ok");
@@ -599,6 +656,8 @@
     $("btn-reset").onclick = () => { stopDemo(false); api("/api/reset"); hist.t.length = 0; hist.res.length = 0; };
     $("btn-pause").onclick = () => api(`/api/pause?on=${state && state.paused ? 0 : 1}`);
     $("btn-demo").onclick = runDemo;
+    // -- escenario de misión --
+    $("btn-mission").onclick = () => api("/api/mode?m=" + (curMode === "mission" ? "bench" : "mission"));
     document.querySelectorAll(".speed button[data-x]").forEach(b => b.onclick = () => api(`/api/speed?x=${b.dataset.x}`));
     $("bias").oninput = () => { $("bias-val").textContent = `${$("bias").value} m/s`; api(`/api/param?bias=${$("bias").value}`); };
     $("vote").oninput = () => { $("vote-val").textContent = `${$("vote").value} m`; api(`/api/param?vote=${$("vote").value}`); };
@@ -630,6 +689,7 @@
     try {
       const s = await (await fetch("/api/state")).json();
       prev = state; state = s;
+      if (s.mode !== curMode) onModeChange(s.mode);
       if (prev) prev.drones.forEach(pd => { const nd = state.drones.find(x => x.id === pd.id); if (nd && pd.status === "mitigated" && nd.status === "ok") { restoredAt = performance.now(); restoredName = nd.name; } });
       if (!state.paused) { hist.t.push(state.clock); hist.res.push(state.drones.map(d => d.residual)); if (hist.t.length > HIST_MAX) { hist.t.shift(); hist.res.shift(); } }
       renderPanel(); drawStrip();

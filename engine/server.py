@@ -36,6 +36,13 @@ def _make_world():
 
 
 world = _make_world()
+mission = None              # escenario de misión (se crea al entrar en ese modo)
+mode = "bench"              # "bench" (banco de ensayos) | "mission" (asalto al búnker)
+
+
+def _active():
+    return mission if mode == "mission" else world
+
 
 CONTENT_TYPES = {
     ".html": "text/html; charset=utf-8",
@@ -48,7 +55,7 @@ CONTENT_TYPES = {
 
 def _sim_loop():
     while True:
-        world.step()
+        _active().step()
         time.sleep(TICK)
 
 
@@ -100,57 +107,73 @@ class Handler(BaseHTTPRequestHandler):
         return self._send_file(os.path.join(WEB_DIR, rel))
 
     def _handle_api(self, path, q):
+        global mode, mission
+
         def arg(name, default=None):
             return q.get(name, [default])[0]
 
+        w = _active()
+
+        # -- cambio de modo: banco de ensayos <-> escenario de misión --
+        if path == "/api/mode":
+            if arg("m", "bench") == "mission":
+                from .mission import MissionWorld
+                mission = MissionWorld() if mission is None else (mission.reset() or mission)
+                mode = "mission"
+            else:
+                mode = "bench"
+            return self._send_json({"ok": True, "mode": mode})
         if path == "/api/config":
-            return self._send_json(world.config())
+            c = _active().config(); c["mode"] = mode
+            return self._send_json(c)
         if path == "/api/state":
-            return self._send_json(world.snapshot())
-        if path == "/api/spoof":
-            return self._send_json({"ok": world.inject_spoof(_to_node(arg("node")))})
-        if path == "/api/hpm":
-            return self._send_json({"ok": world.trigger_hpm(_to_node(arg("node")))})
-        # -- capa de resiliencia (sólo backend sim; el firmware devuelve ok:false) --
-        if path == "/api/jamming":
-            fn = getattr(world, "trigger_jamming", None)
-            return self._send_json({"ok": bool(fn()) if fn else False, "unsupported": fn is None})
-        if path == "/api/shadow":
-            fn = getattr(world, "trigger_comms_shadow", None)
-            return self._send_json({"ok": bool(fn(_to_node(arg("node")))) if fn else False,
-                                    "unsupported": fn is None})
-        if path == "/api/scatter":
-            fn = getattr(world, "trigger_scatter", None)
-            return self._send_json({"ok": bool(fn()) if fn else False, "unsupported": fn is None})
-        if path == "/api/kinetic":
-            fn = getattr(world, "trigger_kinetic", None)
-            n = arg("n", "2")
-            return self._send_json({"ok": bool(fn(n)) if fn else False, "unsupported": fn is None})
-        if path == "/api/lowbatt":
-            fn = getattr(world, "trigger_lowbatt", None)
-            return self._send_json({"ok": bool(fn(_to_node(arg("node")))) if fn else False,
-                                    "unsupported": fn is None})
-        if path == "/api/defense":
-            world.set_defense(arg("on", "1") == "1")
-            return self._send_json({"ok": True, "defense": world.defense})
-        if path == "/api/param":
-            try:
-                world.set_params(bias=arg("bias"), vote=arg("vote"))
-            except ValueError:
-                pass
-            return self._send_json({"ok": True, "bias_rate": world.bias_rate, "vote_thresh": world.vote_thresh})
+            s = _active().snapshot(); s["mode"] = mode
+            return self._send_json(s)
+        # -- controles comunes a los dos modos --
         if path == "/api/pause":
-            world.set_pause(arg("on", "1") == "1")
-            return self._send_json({"ok": True, "paused": world.paused})
+            w.set_pause(arg("on", "1") == "1")
+            return self._send_json({"ok": True})
         if path == "/api/speed":
             try:
-                world.set_speed(int(arg("x", "1")))
+                w.set_speed(int(arg("x", "1")))
             except ValueError:
                 pass
-            return self._send_json({"ok": True, "speed": world.speed})
-        if path == "/api/reset":
-            world.reset()
             return self._send_json({"ok": True})
+        if path == "/api/reset":
+            w.reset()
+            return self._send_json({"ok": True})
+
+        # -- ataques del banco de ensayos (no aplican en modo misión: ok:false) --
+        def call(method, *a):
+            fn = getattr(w, method, None)
+            return self._send_json({"ok": bool(fn(*a)) if fn else False, "unsupported": fn is None})
+        if path == "/api/spoof":
+            return call("inject_spoof", _to_node(arg("node")))
+        if path == "/api/hpm":
+            return call("trigger_hpm", _to_node(arg("node")))
+        if path == "/api/jamming":
+            return call("trigger_jamming")
+        if path == "/api/shadow":
+            return call("trigger_comms_shadow", _to_node(arg("node")))
+        if path == "/api/scatter":
+            return call("trigger_scatter")
+        if path == "/api/kinetic":
+            return call("trigger_kinetic", arg("n", "2"))
+        if path == "/api/lowbatt":
+            return call("trigger_lowbatt", _to_node(arg("node")))
+        if path == "/api/defense":
+            fn = getattr(w, "set_defense", None)
+            if fn:
+                fn(arg("on", "1") == "1")
+            return self._send_json({"ok": fn is not None})
+        if path == "/api/param":
+            fn = getattr(w, "set_params", None)
+            if fn:
+                try:
+                    fn(bias=arg("bias"), vote=arg("vote"))
+                except ValueError:
+                    pass
+            return self._send_json({"ok": fn is not None})
         return self.send_error(404, "API desconocida")
 
 
