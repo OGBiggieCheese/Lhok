@@ -171,7 +171,7 @@ td.st-mitigated { color: var(--orange); } td.st-down { color: var(--gray); } td.
 .entry.info .e-x { color: var(--ink-2); }
 .empty { color: var(--ink-3); font-style: italic; font-family: var(--serif); }
 
-.bench-foot { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 2px solid var(--ink); background: var(--paper); }
+.bench-foot { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 2px solid var(--ink); background: var(--paper); position: sticky; bottom: 0; z-index: 3; }
 .speed button { font: inherit; font-family: var(--mono); font-size: 12px; padding: 5px 10px; border: 1px solid var(--ink); background: var(--paper); cursor: pointer; margin-left: -1px; }
 .speed button.on { background: var(--ink); color: var(--paper); }
 .speed button.pause.on { background: var(--orange); border-color: var(--orange); }

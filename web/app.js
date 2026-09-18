@@ -352,13 +352,24 @@
 
   // ---------- narración ----------
   function narrate() {
-    const D = state.drones, box = $("story");
+    const D = state.drones, box = $("story"), R = state.res || {};
     const need = Math.floor((state.stats.active - 1) * .5) + 1;
     const cap = D.find(d => d.status === "captured"), mit = D.find(d => d.status === "mitigated"),
           sp = D.find(d => d.spoof && d.status === "ok"), down = D.find(d => d.down);
+    const lowbat = D.find(d => d.battery != null && d.battery < 20 && !d.down && d.status !== "captured");
+    const rtb = D.find(d => d.role === "rtb");
+    const shadow = R.shadow && R.shadow.length;
     let step, title, text, cls = "";
     if (cap) { step = "6 · 6"; title = `${cap.name} fue capturado`; cls = "captured";
       text = `Sin consenso, nadie contradijo a su GPS y ${cap.name} siguió derecho a la zona trampa. <b>Esto es lo que pasa hoy con un dron aislado.</b>`; }
+    else if (R.gps_killed) { step = "GPS"; title = "GPS del enjambre apagado"; cls = "mitig";
+      text = `Spoofing masivo detectado: <b>la mayoría votó apagar el GPS</b> de todas las unidades. Ahora vuelan por <b>inercia y radio (UWB)</b>, inmunes al engaño del satélite.`; }
+    else if (R.scatter) { step = "DISPERSIÓN"; title = "Dispersión táctica"; cls = "vote";
+      text = `Amenaza detectada. El enjambre <b>rompe la formación</b> con maniobras evasivas y se <b>reagrupa</b> en un punto de reunión memorizado (marca ⊕ naranja).`; }
+    else if (R.blackout) { step = "ENLACE"; title = "Sin enlace con la base"; cls = "captured";
+      text = `Jamming total: se cortó el enlace con la base. El enjambre <b>ascendió para recuperar línea de vista</b> y, al no lograrlo, ejecuta un <b>retorno coordinado</b> por el último vector limpio.`; }
+    else if (R.jamming) { step = "ENLACE"; title = "Inhibidor de radio activo"; cls = "vote";
+      text = `Un inhibidor enemigo ataca el enlace de radio. El enjambre busca <b>rutas de relevo</b> y sube para recuperar la línea de vista con la base.`; }
     else if (mit && !mit.spoof) { step = "5 · 6"; title = "El atacante desiste"; cls = "mitig";
       text = `${mit.name} vuelve a su puesto guiado por sus vecinos. Cuando la señal GPS vuelve a coincidir con las distancias medidas, recupera la confianza en su receptor.`; }
     else if (mit) { step = "4 · 6"; title = `Consenso: ${mit.name} aislado y corregido`; cls = "mitig";
@@ -369,6 +380,11 @@
       text = `La distancia que los vecinos <b>miden por radio</b> hasta ${sp.name} no coincide con la que <b>implica su GPS</b> (marcas ✗). ${sp.votes} de ${state.stats.active - 1} ya lo contradicen; falta sostenerlo un instante para confirmar.`; }
     else if (sp) { step = "2 · 6"; title = `Ataque: señal GPS falsa a ${sp.name}`; cls = "attack";
       text = `${sp.name} <b>cree seguir en formación</b> (cuadrado azul), pero su GPS miente y físicamente es arrastrado hacia la trampa (flecha naranja). Él solo no tiene forma de notarlo.`; }
+    else if (shadow) { step = "COMMS"; title = "Relevo de comunicaciones"; cls = "vote";
+      text = `Un dron perdió el enlace <b>directo</b> con la base (sombra de terreno). Un compañero se volvió <b>puente repetidor</b> (línea azul) para mantenerlo conectado.`; }
+    else if (rtb || lowbat) { step = "ENERGÍA"; title = "Gestión cooperativa de energía"; cls = "vote";
+      const who = (rtb || lowbat).name;
+      text = `${who} está bajo de batería. El enjambre <b>comparte energía</b>: el dron con más carga asume el liderazgo (★) y el agotado se repliega al centro o <b>regresa solo</b> a la base.`; }
     else if (down) { step = "HPM"; title = `Pulso de energía dirigida sobre ${down.name}`; cls = "vote";
       text = `${down.name} perdió el enlace y cae. El enjambre <b>reconfigura la formación</b> con los que quedan; al reiniciarse, ${down.name} se reintegra solo.`; }
     else if (performance.now() - restoredAt < 5000) { step = "5 · 6"; title = "Ataque neutralizado"; cls = "mitig";
@@ -544,7 +560,7 @@
       const label = { ok: d.spoof ? "bajo ataque" : "nominal", mitigated: "aislado", down: "sin enlace", captured: "CAPTURADO" }[st];
       const w = Math.min(60, d.residual / Math.max(1, state.params.vote_thresh) * 20);
       const rol = d.role === "leader" ? ' <span title="líder">★</span>' : d.role === "rtb" ? ' <span title="regreso a base">⏎</span>' : "";
-      const iner = d.nav_mode === "inertial" ? ' <span class="tagi">INER</span>' : (!d.gcs_link && !d.down ? ' <span class="tagi off">⚠</span>' : "");
+      const iner = d.nav_mode === "inertial" ? ' <span class="tagi">INER</span>' : (d.gcs_link === false && !d.down ? ' <span class="tagi off">⚠</span>' : "");
       let bat = "";
       if (d.battery != null) {
         const bc = d.battery < 18 ? "crit" : d.battery < 35 ? "low" : "";
