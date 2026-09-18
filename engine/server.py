@@ -1,5 +1,5 @@
 """
-Servidor de FALANGE — sólo biblioteca estándar de Python (sin dependencias).
+Servidor de LHOK — sólo biblioteca estándar de Python (sin dependencias).
 Ejecutar:  python -m engine.server     (o)     python run.py
 """
 import json
@@ -19,9 +19,9 @@ WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "web")
 
 def _make_world():
     """Selecciona el backend. Por defecto, simulador puro (cero dependencias, siempre
-    funciona). Con FALANGE_BACKEND=mav usa firmware real de ArduPilot (SITL); si SITL
+    funciona). Con LHOK_BACKEND=mav usa firmware real de ArduPilot (SITL); si SITL
     no está disponible, avisa y cae de vuelta al simulador para no dejar la demo sin correr."""
-    backend = os.environ.get("FALANGE_BACKEND", "sim").strip().lower()
+    backend = os.environ.get("LHOK_BACKEND", "sim").strip().lower()
     if backend in ("mav", "ardupilot", "sitl", "real"):
         try:
             from .mav_world import MavWorld
@@ -159,7 +159,7 @@ def main():
     url = f"http://{HOST}:{PORT}/"
     server = ThreadingHTTPServer((HOST, PORT), Handler)
     print("=" * 60)
-    print("  FALANGE — Enjambre con navegación por consenso")
+    print("  LHOK — Enjambre con navegación por consenso")
     print("  Anti-spoofing GPS distribuido (RAIM de enjambre)")
     print("=" * 60)
     print(f"  Tablero:  {url}")

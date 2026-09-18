@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-# FALANGE — Imagen de FIRMWARE REAL: enjambre de ArduPilot SITL (ArduCopter).
+# LHOK — Imagen de FIRMWARE REAL: enjambre de ArduPilot SITL (ArduCopter).
 #
 # Trae el firmware de vuelo real ya compilado. Al correr, levanta N=7 instancias
 # de ArduCopter y las expone por MAVLink/TCP en 5760+10*i — exactamente los

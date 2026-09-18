@@ -1,4 +1,4 @@
-/* FALANGE — visor del enjambre y banco de ensayos (canvas puro, sin librerías). */
+/* LHOK — visor del enjambre y banco de ensayos (canvas puro, sin librerías). */
 (() => {
   const canvas = document.getElementById("scene");
   const ctx = canvas.getContext("2d");

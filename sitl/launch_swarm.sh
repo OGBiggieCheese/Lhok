@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# FALANGE — Lanzador del enjambre de firmware REAL (ArduPilot SITL).
+# LHOK — Lanzador del enjambre de firmware REAL (ArduPilot SITL).
 #
 # Levanta N=7 instancias de ArduCopter (firmware real) sobre el mismo punto de
-# origen que usa FALANGE. Cada instancia expone MAVLink por TCP en 5760+10*i,
+# origen que usa LHOK. Cada instancia expone MAVLink por TCP en 5760+10*i,
 # que es donde se conecta el backend MavWorld.
 #
 # Requisitos (una sola vez):
@@ -50,8 +50,8 @@ for i in $(seq 0 $((N-1))); do
   sim_vehicle.py -v "$VEH" -I"$i" --sysid $((i+1)) \
     --custom-location="$HOME_LOC" \
     --no-mavproxy $REBUILD \
-    >/tmp/falange_sitl_$i.log 2>&1 &
-  echo "  dron $i -> tcp:127.0.0.1:$((5760 + 10*i))   (log: /tmp/falange_sitl_$i.log)"
+    >/tmp/lhok_sitl_$i.log 2>&1 &
+  echo "  dron $i -> tcp:127.0.0.1:$((5760 + 10*i))   (log: /tmp/lhok_sitl_$i.log)"
   REBUILD="--no-rebuild"   # sólo la primera compila
   sleep 2
 done
@@ -59,16 +59,16 @@ done
 cat <<EOF
 
 Enjambre arriba. Dejá esta terminal abierta.
-Ahora, en Windows (o en la misma máquina), arrancá FALANGE en modo firmware real:
+Ahora, en Windows (o en la misma máquina), arrancá LHOK en modo firmware real:
 
   Windows PowerShell:
-    \$env:FALANGE_BACKEND="mav"; python run.py
+    \$env:LHOK_BACKEND="mav"; python run.py
 
   Linux/WSL:
-    FALANGE_BACKEND=mav python run.py
+    LHOK_BACKEND=mav python run.py
 
-Si FALANGE corre en Windows y SITL en WSL, exportá los endpoints de WSL:
-  \$env:FALANGE_SITL="tcp:127.0.0.1:5760,tcp:127.0.0.1:5770,tcp:127.0.0.1:5780,tcp:127.0.0.1:5790,tcp:127.0.0.1:5800,tcp:127.0.0.1:5810,tcp:127.0.0.1:5820"
+Si LHOK corre en Windows y SITL en WSL, exportá los endpoints de WSL:
+  \$env:LHOK_SITL="tcp:127.0.0.1:5760,tcp:127.0.0.1:5770,tcp:127.0.0.1:5780,tcp:127.0.0.1:5790,tcp:127.0.0.1:5800,tcp:127.0.0.1:5810,tcp:127.0.0.1:5820"
 (WSL2 reenvía localhost a Windows automáticamente en versiones recientes.)
 
 Para bajar todo:  ./launch_swarm.sh --stop

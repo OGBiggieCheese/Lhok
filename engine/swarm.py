@@ -157,9 +157,9 @@ class World:
                 return
             self.defense = on
             if on:
-                self.consensus.alert(self, 'info', "Defensa FALANGE activada: los nodos se vigilan mutuamente")
+                self.consensus.alert(self, 'info', "Defensa LHOK activada: los nodos se vigilan mutuamente")
             else:
-                self.consensus.alert(self, 'med', "Defensa FALANGE desactivada: cada nodo confía ciegamente en su GPS")
+                self.consensus.alert(self, 'med', "Defensa LHOK desactivada: cada nodo confía ciegamente en su GPS")
 
     def set_params(self, bias=None, vote=None):
         with self.lock:

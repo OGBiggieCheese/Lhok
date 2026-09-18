@@ -1,4 +1,4 @@
-# FALANGE — El enjambre que se cuida solo
+# LHOK — El enjambre que se cuida solo
 
 **Navegación por consenso: detección y corrección de spoofing GPS distribuida en un enjambre de drones.**
 Hackathon Nacional de Ciberdefensa CYBER.AR 2026 — Eje 1 (sistemas autónomos y no tripulados).
@@ -15,7 +15,7 @@ que sigue en curso. Un dron **solo** no puede saber si su GPS le miente.
 ## La idea
 
 Los aviones tienen **RAIM** (chequean si el GPS es consistente); un dron chico no puede
-llevarlo solo. **FALANGE lo lleva al enjambre**: los drones se **miden entre sí por radio**
+llevarlo solo. **LHOK lo lleva al enjambre**: los drones se **miden entre sí por radio**
 (ranging tipo UWB), y esa distancia física **no se puede falsificar a distancia**.
 
 - Si el GPS de un dron es coherente con las distancias que sus vecinos le miden → sano.
@@ -36,7 +36,7 @@ python run.py
 
 (En Windows también doble clic en `run.bat`.) Abre `http://127.0.0.1:8010/`.
 
-> Corre en el puerto **8010**, así que podés tener ATALAYA (8000) y FALANGE a la vez.
+> Corre en el puerto **8010**, así que podés tener ATALAYA (8000) y LHOK a la vez.
 
 ## La demostración (para los 3 minutos)
 
@@ -51,7 +51,7 @@ superior **narra en lenguaje llano** qué está pasando en cada momento (6 fases
    dice que está acá") mientras físicamente es arrastrado hacia la trampa (flecha naranja).
    En los enlaces aparecen las marcas **✗** de cada vecino que lo contradice; cuando la mayoría
    vota, el nodo queda **aislado**, su posición real se reconstruye (marca ⊕) y **vuelve solo**.
-3. *El mismo ataque, sin defensa* — se apaga el interruptor **Defensa FALANGE**: nadie contradice
+3. *El mismo ataque, sin defensa* — se apaga el interruptor **Defensa LHOK**: nadie contradice
    al GPS, y el dron termina **CAPTURADO** en la trampa. Es el contrafáctico: lo que le pasa
    hoy a un dron aislado.
 
@@ -59,7 +59,7 @@ Controles manuales (para las preguntas del jurado):
 
 - **Spoofing GPS** (`A`) / **Pulso HPM** (`H`) sobre el nodo seleccionado (clic en el visor, en la
   tabla, o teclas `1`–`7`), o aleatorio si no hay selección.
-- **Interruptor Defensa FALANGE** — con/sin consenso, en vivo.
+- **Interruptor Defensa LHOK** — con/sin consenso, en vivo.
 - **Velocidad de arrastre del spoofing** y **umbral de voto** — para mostrar la robustez del
   método ("¿y si el atacante es más sutil?", "¿y si bajamos el umbral?").
 - **Residual de consenso** — strip chart de los últimos 30 s con la línea de umbral: se ve cómo
@@ -68,7 +68,7 @@ Controles manuales (para las preguntas del jurado):
 
 ## Capa de resiliencia autónoma (companion computer)
 
-Además del consenso anti-spoofing, FALANGE incluye una **capa de coordinación de enjambre**
+Además del consenso anti-spoofing, LHOK incluye una **capa de coordinación de enjambre**
 (`resilience.py`) — la inteligencia colectiva que correría en el *companion computer* de cada
 dron, no en el C++ de ArduPilot (que es de un solo vehículo). Consume el estado del enjambre y
 devuelve, por dron, un objetivo de navegación y un modo (traducibles a comandos MAVLink):
@@ -114,7 +114,7 @@ firmware real. `MavWorld` expone la misma interfaz que `World`; el visor tampoco
 
 ## Modo firmware real (ArduPilot SITL)
 
-Además del simulador de demo (por defecto, cero dependencias), FALANGE puede vigilar
+Además del simulador de demo (por defecto, cero dependencias), LHOK puede vigilar
 **drones de verdad**: N instancias de **ArduPilot SITL**, que es el firmware de vuelo real
 (ArduCopter) corriendo en la PC, con su EKF real, su fusión GPS real y su navegación real.
 
@@ -134,23 +134,23 @@ distancia, como el UWB real.
    docker compose build     # primera vez: compila el firmware (~15-30 min)
    docker compose up        # levanta los 7 ArduCopter
    ```
-2. En otra terminal, arrancá FALANGE en modo firmware real:
+2. En otra terminal, arrancá LHOK en modo firmware real:
    ```bash
    pip install -r requirements-mav.txt      # una vez (pymavlink)
    ../run-mav.ps1                            # PowerShell  (o run-mav.bat)
    ```
 El visor en `http://127.0.0.1:8010/` es idéntico; ahora los 7 puntos son 7 ArduCopter reales.
-Los contenedores exponen `tcp:127.0.0.1:5760,5770,…,5820`, que es lo que FALANGE busca por defecto.
+Los contenedores exponen `tcp:127.0.0.1:5760,5770,…,5820`, que es lo que LHOK busca por defecto.
 
 **Alternativa sin Docker** (WSL2/Linux con ArduPilot ya compilado):
 ```bash
 Idea1/sitl/launch_swarm.sh --fast        # levanta el enjambre nativo
-$env:FALANGE_BACKEND="mav"; py run.py     # arranca FALANGE
+$env:LHOK_BACKEND="mav"; py run.py     # arranca LHOK
 ```
 
 > **Robustez de demo:** si SITL no está corriendo (o falta `pymavlink`), el servidor avisa
 > y **cae solo al simulador puro**. La demo nunca se queda sin funcionar. Endpoints de las
-> instancias configurables con `FALANGE_SITL`.
+> instancias configurables con `LHOK_SITL`.
 
 *Comportamiento real del firmware:* al inyectar spoofing, el EKF real **resiste** el GPS
 falso (gating de innovación) y cede por saltos hasta que el dron es arrastrado físicamente

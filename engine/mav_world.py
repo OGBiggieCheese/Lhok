@@ -1,9 +1,9 @@
 """
-MavWorld — backend de FALANGE sobre firmware REAL de ArduPilot (SITL).
+MavWorld — backend de LHOK sobre firmware REAL de ArduPilot (SITL).
 
 Reemplaza al simulador cinemático (`swarm.World`) por N instancias de **ArduPilot
 SITL**, que es el firmware de vuelo real (ArduCopter) compilado para correr en la
-PC: EKF real, fusión GPS real, navegación real. FALANGE deja de "simular drones" y
+PC: EKF real, fusión GPS real, navegación real. LHOK deja de "simular drones" y
 pasa a **vigilar drones de verdad** que vuelan una formación real.
 
 Por qué esto hace la demo "totalmente real"
@@ -56,9 +56,9 @@ SETPOINT_EVERY = 2         # enviar setpoint cada N ticks (evita saturar el enla
 
 # Endpoints MAVLink de cada instancia SITL. Por defecto, el TCP que expone SITL
 # (serial0) para la instancia i: 5760 + 10*i. Se puede sobreescribir con la
-# variable de entorno FALANGE_SITL (lista separada por comas).
+# variable de entorno LHOK_SITL (lista separada por comas).
 def _default_endpoints():
-    env = os.environ.get("FALANGE_SITL", "").strip()
+    env = os.environ.get("LHOK_SITL", "").strip()
     if env:
         return [e.strip() for e in env.split(",") if e.strip()]
     return [f"tcp:127.0.0.1:{5760 + 10 * i}" for i in range(N)]
@@ -89,7 +89,7 @@ class MavLink:
 
     def clear_spoof(self):
         """Pone a cero cualquier glitch de GPS residual (SITL persiste params en su
-        eeprom entre reinicios): así FALANGE siempre arranca con el enjambre sano."""
+        eeprom entre reinicios): así LHOK siempre arranca con el enjambre sano."""
         for base in ("SIM_GPS1_GLITCH_", "SIM_GPS_GLITCH_"):
             for ax in ("X", "Y", "Z"):
                 self._param(base + ax, 0.0)
@@ -185,7 +185,7 @@ class MavLink:
 
 
 class MavWorld:
-    """Backend de FALANGE respaldado por firmware real de ArduPilot (SITL)."""
+    """Backend de LHOK respaldado por firmware real de ArduPilot (SITL)."""
 
     def __init__(self):
         self.lock = threading.Lock()
@@ -229,9 +229,9 @@ class MavWorld:
         endpoints = _default_endpoints()
         if len(endpoints) < N:
             raise RuntimeError(
-                f"FALANGE modo firmware: hacen falta {N} instancias SITL, "
+                f"LHOK modo firmware: hacen falta {N} instancias SITL, "
                 f"hay {len(endpoints)} endpoints. Lanzá el enjambre (ver sitl/launch_swarm.sh) "
-                f"o definí FALANGE_SITL con {N} endpoints separados por comas.")
+                f"o definí LHOK_SITL con {N} endpoints separados por comas.")
         links = []
         for i in range(N):
             # SITL expone un TCP de un solo cliente y tarda un instante en liberar
@@ -322,9 +322,9 @@ class MavWorld:
                 return
             self.defense = on
             if on:
-                self.consensus.alert(self, 'info', "Defensa FALANGE activada: los nodos se vigilan mutuamente")
+                self.consensus.alert(self, 'info', "Defensa LHOK activada: los nodos se vigilan mutuamente")
             else:
-                self.consensus.alert(self, 'med', "Defensa FALANGE desactivada: cada nodo confía ciegamente en su GPS")
+                self.consensus.alert(self, 'med', "Defensa LHOK desactivada: cada nodo confía ciegamente en su GPS")
 
     def set_params(self, bias=None, vote=None):
         with self.lock:
@@ -394,14 +394,14 @@ class MavWorld:
                     d['spoof'] = False
                     self.links[d['id']].set_gps_glitch(0.0, 0.0)
 
-        # 4) comandar la formación (o la posición corregida si FALANGE mitiga)
+        # 4) comandar la formación (o la posición corregida si LHOK mitiga)
         if self._tick % SETPOINT_EVERY == 0:
             for i, (d, link) in enumerate(zip(self.drones, self.links)):
                 if d['down'] or d['status'] == 'captured':
                     continue
                 tgt = d['slot']
                 if self.defense and d['status'] == 'mitigated' and d['est']:
-                    # FALANGE reinyecta la posición reconstruida como referencia de navegación:
+                    # LHOK reinyecta la posición reconstruida como referencia de navegación:
                     # se comanda un objetivo compensado para que la posición REAL vuelva al puesto.
                     ex = d['slot'][0] + (d['slot'][0] - d['est'][0])
                     ey = d['slot'][1] + (d['slot'][1] - d['est'][1])

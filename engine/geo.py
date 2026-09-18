@@ -1,7 +1,7 @@
 """
 Conversión entre el marco local de la formación y coordenadas geográficas (LLA).
 
-El motor de FALANGE trabaja en un marco local plano en metros (x=Este, y=Norte,
+El motor de LHOK trabaja en un marco local plano en metros (x=Este, y=Norte,
 z=arriba). ArduPilot habla en latitud/longitud/altitud. Estas funciones traducen
 entre ambos con la aproximación de plano tangente (equirrectangular), suficiente
 para un enjambre que opera en un radio de pocos cientos de metros.

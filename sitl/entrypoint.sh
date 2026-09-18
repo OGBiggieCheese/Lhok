@@ -5,11 +5,11 @@
 set -euo pipefail
 cd /ardupilot
 
-N="${FALANGE_N:-7}"
+N="${LHOK_N:-7}"
 HOME_LOC="${HOME_LOC:--31.4370,-64.1888,470,0}"   # debe coincidir con engine/geo.py
 
 echo "=================================================================="
-echo "  FALANGE SITL — levantando $N ArduCopter (firmware real)"
+echo "  LHOK SITL — levantando $N ArduCopter (firmware real)"
 echo "  Home: $HOME_LOC"
 echo "=================================================================="
 
@@ -24,8 +24,8 @@ for i in $(seq 0 $((N-1))); do
 done
 
 echo "------------------------------------------------------------------"
-echo "  Enjambre arriba. Desde el host, arrancá FALANGE en modo firmware:"
-echo "    PowerShell:  \$env:FALANGE_BACKEND=\"mav\"; py run.py"
+echo "  Enjambre arriba. Desde el host, arrancá LHOK en modo firmware:"
+echo "    PowerShell:  \$env:LHOK_BACKEND=\"mav\"; py run.py"
 echo "  (o usá Idea1/run-mav.ps1). Ctrl+C para bajar el enjambre."
 echo "------------------------------------------------------------------"
 

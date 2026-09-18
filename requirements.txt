@@ -1,2 +1,2 @@
-# FALANGE no requiere dependencias externas: sólo la biblioteca estándar de Python 3.8+.
+# LHOK no requiere dependencias externas: sólo la biblioteca estándar de Python 3.8+.
 # Intencional (soberanía tecnológica: corre a bordo, offline, sin servicios externos).

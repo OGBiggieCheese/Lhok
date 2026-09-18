@@ -1,5 +1,5 @@
 @echo off
-REM Lanzador de FALANGE para Windows
+REM Lanzador de LHOK para Windows
 cd /d "%~dp0"
 python run.py
 pause

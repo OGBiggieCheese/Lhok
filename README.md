@@ -1,4 +1,4 @@
-# FALANGE
+# LHOK
 
 **El enjambre de drones que se cuida solo.**
 Navegación por consenso: detección y corrección de spoofing GPS distribuida en un enjambre.
@@ -46,11 +46,11 @@ Abre `http://127.0.0.1:8010/`. Apretá **▶ Demostración guiada** (o la tecla 
 
 ## Modo firmware real (opcional)
 
-Corre el firmware de vuelo real (ArduPilot) en Docker y FALANGE lo vigila:
+Corre el firmware de vuelo real (ArduPilot) en Docker y LHOK lo vigila:
 
 ```bash
 cd sitl && docker compose up -d      # 7 ArduCopter reales
-../run-mav.ps1                        # FALANGE en modo firmware
+../run-mav.ps1                        # LHOK en modo firmware
 ```
 
 Detalles, arquitectura y troubleshooting: **[DOCS.md](DOCS.md)**.
