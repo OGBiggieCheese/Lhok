@@ -285,10 +285,10 @@
         if (d.relay_via != null) {
           const relay = D.find(x => x.id === d.relay_via);
           if (relay) { line(q, project(P(relay)), C.blue, 1.6, .75, [3, 3]); halo("relevo", (q.x + project(P(relay)).x) / 2, (q.y + project(P(relay)).y) / 2 - 4, C.blue, "9px Consolas, monospace", "center"); }
-        } else if (d.gcs_link) {
-          line(q, bq, C.green, .8, .2);
-        } else {
+        } else if (d.gcs_link === false) {
           halo("⚠ sin enlace", q.x + 8, q.y + 15, C.darkRed, "bold 10px Consolas, monospace");
+        } else {
+          line(q, bq, C.green, .8, .2);   // conectado (o sin dato de enlace = se asume conectado)
         }
       });
     }
