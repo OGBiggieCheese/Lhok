@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FALANGE — Banco de ensayos</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="masthead">
+    <div class="mast-left">
+      <div class="eyebrow">Banco de ensayos · navegación por consenso · simulación</div>
+      <h1>Falange <span class="ens">Ensayo N.º 07 — enjambre de 7 nodos</span></h1>
+    </div>
+    <div class="annunciators">
+      <div class="lamp" id="lamp-swarm"><i></i><span>Enjambre</span></div>
+      <div class="lamp" id="lamp-gps"><i></i><span>Integridad GPS</span></div>
+      <div class="lamp" id="lamp-link"><i></i><span>Enlace</span></div>
+      <div class="lamp" id="lamp-def"><i></i><span>Defensa</span></div>
+    </div>
+    <div class="mast-right">
+      <span class="lbl">Reloj de misión</span>
+      <span class="mono big" id="clock">T+00:00</span>
+    </div>
+  </header>
+
+  <main>
+    <section id="scene-wrap">
+      <canvas id="scene"></canvas>
+
+      <div id="story" class="story">
+        <span id="story-step" class="story-step">1 · 6</span>
+        <div class="story-body">
+          <div id="story-title" class="story-title">Formación nominal</div>
+          <div id="story-text" class="story-text">Cada dron mide por radio la distancia a sus vecinos. Esa distancia física no se puede falsificar desde lejos.</div>
+        </div>
+        <div id="story-demo" class="story-demo hidden"></div>
+      </div>
+
+      <div id="tooltip" class="tooltip hidden"></div>
+      <div class="viewbar">
+        <span class="group">
+          <button data-view="top" class="on">Planta</button><button data-view="persp">Perspectiva</button><button data-view="follow">Seguir nodo</button>
+        </span>
+        <span class="group layers">
+          <label><input type="checkbox" data-layer="terrain" checked /> terreno</label>
+          <label><input type="checkbox" data-layer="mesh" checked /> malla</label>
+          <label><input type="checkbox" data-layer="trails" checked /> rastros</label>
+          <label><input type="checkbox" data-layer="ghost" checked /> GPS</label>
+          <label><input type="checkbox" data-layer="labels" /> nombres</label>
+        </span>
+        <span class="grow"></span>
+        <span class="hint">arrastrar rota · rueda acerca · clic selecciona · <kbd>1</kbd>–<kbd>7</kbd> nodo · <kbd>A</kbd> spoofing · <kbd>H</kbd> HPM · <kbd>G</kbd> demo guiada · <kbd>espacio</kbd> pausa</span>
+      </div>
+    </section>
+
+    <aside id="bench">
+      <section class="block demo-block">
+        <button id="btn-demo" class="demo">▶ Demostración guiada <small>≈ 70 s, se explica sola</small></button>
+      </section>
+
+      <section class="block">
+        <h2>Banco de ataques</h2>
+        <div class="target">Objetivo: <b id="target-name">nodo aleatorio</b> <button id="btn-clear" class="link">quitar</button></div>
+        <div class="btns">
+          <button id="btn-spoof">Spoofing GPS</button>
+          <button id="btn-hpm">Pulso HPM</button>
+        </div>
+        <div class="switch-row">
+          <span>Defensa FALANGE</span>
+          <button id="btn-def" class="switch on" aria-label="defensa"><span></span></button>
+          <b id="def-state" class="mono">ACTIVA</b>
+        </div>
+        <label class="slider">Velocidad de arrastre del spoofing <b id="bias-val" class="mono">5 m/s</b>
+          <input type="range" id="bias" min="2" max="20" step="1" value="5" /></label>
+        <label class="slider">Umbral de voto <b id="vote-val" class="mono">12 m</b>
+          <input type="range" id="vote" min="3" max="60" step="1" value="12" /></label>
+      </section>
+
+      <section class="block">
+        <h2>Resiliencia autónoma <small>capa de enjambre (companion computer)</small></h2>
+        <div class="btns wrap">
+          <button id="btn-jam">Jamming de enlace</button>
+          <button id="btn-shadow">Sombra de terreno</button>
+          <button id="btn-scatter">Dispersión táctica</button>
+          <button id="btn-kinetic">Ataque cinético</button>
+          <button id="btn-lowbatt">Batería del líder ↓</button>
+        </div>
+        <div class="scen">Escenarios guiados:
+          <button class="link" data-scen="masspoof">Spoofing masivo → apagar GPS</button>
+          <button class="link" data-scen="relay">Relevo de comms</button>
+          <button class="link" data-scen="jam">Jamming → retorno</button>
+          <button class="link" data-scen="energy">Relevo de líder</button>
+          <button class="link" data-scen="scatter">Dispersión y reagrupe</button>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2>Residual de consenso <small>últimos 30 s · trazos = umbral</small></h2>
+        <canvas id="strip"></canvas>
+      </section>
+
+      <section class="block">
+        <h2>Nodos</h2>
+        <table class="nodes">
+          <thead><tr><th></th><th>Nodo</th><th>Estado</th><th class="r">Resid.</th><th class="r">Votos</th><th class="r">Batería</th></tr></thead>
+          <tbody id="nodes"></tbody>
+        </table>
+      </section>
+
+      <section class="block grow">
+        <h2>Registro</h2>
+        <div id="log" class="log"></div>
+      </section>
+
+      <footer class="bench-foot">
+        <span class="speed">
+          <button data-x="1" class="on">×1</button><button data-x="2">×2</button><button data-x="4">×4</button>
+          <button id="btn-pause" class="pause">Pausa</button>
+        </span>
+        <button id="btn-reset" class="quiet">Reiniciar ensayo</button>
+      </footer>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

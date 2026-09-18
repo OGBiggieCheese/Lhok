@@ -1,0 +1,22 @@
+# FALANGE — Enjambre de firmware real (ArduPilot SITL) en Docker.
+#
+#   cd Idea1/sitl
+#   docker compose build      # primera vez (compila el firmware, ~15-30 min)
+#   docker compose up         # levanta los 7 drones
+#
+# Luego, en el host (Windows), arrancá FALANGE en modo firmware real:
+#   PowerShell:  $env:FALANGE_BACKEND="mav"; py run.py     (o: ..\run-mav.ps1)
+#
+# Los 7 drones quedan en tcp://127.0.0.1:5760,5770,...,5820 — que es lo que
+# MavWorld busca por defecto, así que no hace falta configurar nada más.
+services:
+  falange-sitl:
+    build: .
+    image: falange-sitl:latest
+    container_name: falange-sitl
+    environment:
+      - FALANGE_N=7
+      - HOME_LOC=-31.4370,-64.1888,470,0   # debe coincidir con engine/geo.py
+    ports:
+      - "5760-5820:5760-5820"              # MAVLink de las 7 instancias
+    stop_grace_period: 5s

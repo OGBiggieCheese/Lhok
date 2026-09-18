@@ -1,0 +1,6 @@
+# Dependencias SÓLO para el modo firmware real (backend ArduPilot SITL).
+# El modo demo por defecto NO necesita nada de esto (sólo biblioteca estándar).
+#
+#   pip install -r requirements-mav.txt
+#
+pymavlink>=2.4.40

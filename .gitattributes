@@ -1,0 +1,11 @@
+# Normalización de finales de línea
+* text=auto
+
+# Scripts de Linux/Docker: SIEMPRE LF (con CRLF el contenedor no arranca)
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+entrypoint.sh text eol=lf
+
+# Scripts de Windows: CRLF
+*.bat text eol=crlf
+*.ps1 text eol=crlf
