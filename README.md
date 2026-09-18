@@ -1,26 +1,26 @@
-# LHOK
+# Lhok
 
-**El enjambre de drones que se cuida solo.**
-Navegación por consenso: detección y corrección de spoofing GPS distribuida en un enjambre.
+**Sistema de proteccion independiente para enjambres de drones.**
+Utilización del consenso para la detección y corrección de problemas comunes en los enjambres.
 
-> Hackathon Nacional de Ciberdefensa **CYBER.AR 2026** — Eje 1 (sistemas autónomos y no tripulados).
+> Hackathon CyberAr 2026 — Eje 1 (sistemas autónomos y no tripulados).
 
 ---
 
 ## El problema
 
-Con **spoofing de GPS**, un atacante inyecta señales falsas y "secuestra" un dron: lo
-desvía físicamente hacia una trampa mientras el dron cree que sigue en curso. Un dron
-**solo** no puede saber si su GPS le miente.
+Los drones son suceptibles a interferencias por ejemplo el spoofing de GPS, esto causa 
+grandes perdidas en cuanto a material, ya que los drones se desvian fisicamente y caen 
+sin haber terminado sus tareas.
 
-## La idea
+## Nuestra solucion
 
-Los drones se **miden entre sí por radio** (ranging tipo UWB). Esa distancia física **no se
-puede falsificar desde lejos**. Si el GPS de un dron contradice lo que mide todo el enjambre,
+Utilizamos el ranging tipo UWB incluido en la mayoria de los drones para calcular la distancia física 
+**para contrarestar las interferencias**. Si el GPS de un dron contradice lo que mide todo el enjambre,
 los vecinos **votan**, lo **aíslan** y **reconstruyen su posición real**. Es un *RAIM
-distribuido*: en vez de cruzar satélites, cruza vecinos.
+distribuido*: en vez de utilizar satelites o emplear nuevos recursos, utilizamos datos de los vecinos.
 
-> *"No confían en el satélite. Confían entre ellos."*
+> *"Se cuidan entre ellos sin invervencion humana real."*
 
 ## Cómo correr
 
@@ -30,27 +30,26 @@ Requisito: **Python 3.8+**. No hay que instalar nada.
 python run.py
 ```
 
-Abre `http://127.0.0.1:8010/`. Apretá **▶ Demostración guiada** (o la tecla `G`) y se explica sola.
+Abre `http://127.0.0.1:8010/`. Apretá **▶ Demostración guiada** (o la tecla `G`) y podras ver todos los casos de uso de este software.
 
 ## Qué hace
 
-- **Anti-spoofing por consenso** — detecta, aísla y corrige un dron spoofeado por votación
-  bizantina + multilateración.
+- **Anti-spoofing por consenso** — detecta, aísla y corrige un dron spoofeado .
 - **Resiliencia autónoma del enjambre** (botones + escenarios guiados):
   - Voto para **apagar el GPS** de todo el enjambre ante spoofing masivo → vuelo inercial/UWB.
   - **Relevo de comunicaciones** (dron puente) y retorno coordinado ante jamming.
   - **Relevo de liderazgo** por batería.
   - **Dispersión táctica** y reagrupe en punto de reunión.
 - **Firmware real** — el mismo motor corre sobre **7 instancias de ArduPilot SITL** (el
-  firmware que vuela en un Pixhawk). Ver [DOCS.md](DOCS.md).
+  firmware que vuela en un Pixhawk) por lo que todo lo que sucede en esta simulacion es 100% veridico. Ver [DOCS.md](DOCS.md).
 
 ## Modo firmware real (opcional)
 
-Corre el firmware de vuelo real (ArduPilot) en Docker y LHOK lo vigila:
+Corre el firmware de vuelo real (ArduPilot) en Docker y Lhok lo vigila:
 
 ```bash
 cd sitl && docker compose up -d      # 7 ArduCopter reales
-../run-mav.ps1                        # LHOK en modo firmware
+../run-mav.ps1                        # FALANGE en modo firmware
 ```
 
 Detalles, arquitectura y troubleshooting: **[DOCS.md](DOCS.md)**.
